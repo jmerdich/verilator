@@ -47,6 +47,7 @@ template <class T_Buffer>
 class VerilatedTraceBuffer;
 template <class T_Buffer>
 class VerilatedTraceOffloadBuffer;
+class VerilatedTraceOffloadData;
 
 #ifdef VL_THREADED
 //=============================================================================
@@ -118,6 +119,24 @@ public:
         SHUTDOWN = 0xf  // Shutdown worker thread, also marks end of buffer
     };
 };
+
+class VerilatedTraceOffloadData final {
+public:
+    //constexpr size_t StartingStringCount = 8;
+    //std::vector<std::string> strings;
+
+    std::unique_ptr<uint32_t[]> cmds;
+
+    // Only allow move semantics, never copies.
+    VerilatedTraceOffloadData(const VerilatedTraceOffloadData&) = delete;
+    VerilatedTraceOffloadData& operator=(const VerilatedTraceOffloadData&) = delete;
+    VerilatedTraceOffloadData(VerilatedTraceOffloadData&&) = default;
+    VerilatedTraceOffloadData& operator=(VerilatedTraceOffloadData&&) = default;
+    
+    VerilatedTraceOffloadData(size_t bufferSize)
+        : cmds(std::make_unique<uint32_t[]>(bufferSize)),
+          strings(StartingStringCount) {}
+}
 #endif
 
 //=============================================================================
@@ -260,9 +279,9 @@ private:
     // Size of offload buffers
     size_t m_offloadBufferSize = 0;
     // Buffers handed to worker for processing
-    VerilatedThreadQueue<uint32_t*> m_offloadBuffersToWorker;
+    VerilatedThreadQueue<VerilatedTraceOffloadData> m_offloadBuffersToWorker;
     // Buffers returned from worker after processing
-    VerilatedThreadQueue<uint32_t*> m_offloadBuffersFromWorker;
+    VerilatedThreadQueue<VerilatedTraceOffloadData> m_offloadBuffersFromWorker;
 
 protected:
     // Write pointer into current buffer
